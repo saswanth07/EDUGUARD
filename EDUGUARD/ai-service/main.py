@@ -278,7 +278,7 @@ def get_db_connection():
             port=3306,
             database='eduguardian',
             user='root',
-            password='saswanth1710',
+            password='**********',
         )
     except Exception as e:
         logger.warning(f"MySQL connection failed: {e}")
