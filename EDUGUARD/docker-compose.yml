@@ -1,0 +1,81 @@
+version: '3.9'
+
+services:
+  # ---- MySQL Database ----
+  mysql:
+    image: mysql:8.0
+    container_name: eduguardian-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-eduguardian2024}
+      MYSQL_DATABASE: ${DB_NAME:-eduguardian}
+      MYSQL_USER: ${DB_USER:-eduguardian}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-eduguardian2024}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - eduguardian-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- Spring Boot Backend ----
+  backend:
+    build:
+      context: ./BACKEND/EDUGARD
+      dockerfile: Dockerfile
+    container_name: eduguardian-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME:-eduguardian}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-eduguardian}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-eduguardian2024}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      JWT_SECRET: ${JWT_SECRET:-eduguardian2024SecretKeyForJWTAuthenticationThatIsLongEnoughForHS256}
+      AI_SERVICE_URL: http://ai-service:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - eduguardian-net
+
+  # ---- Python AI Service ----
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: eduguardian-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - eduguardian-net
+
+  # ---- React Frontend ----
+  frontend:
+    build:
+      context: ./EDUGUARDFRONTEND
+      dockerfile: Dockerfile
+    container_name: eduguardian-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - eduguardian-net
+
+volumes:
+  mysql_data:
+
+networks:
+  eduguardian-net:
+    driver: bridge

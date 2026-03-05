@@ -1,0 +1,194 @@
+{
+	"info": {
+		"_postman_id": "eduguardian-2.0",
+		"name": "EduGuardian 2.0 API",
+		"description": "Complete API collection for EduGuardian 2.0 Anti-Cheating Proctoring System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8080/api" },
+		{ "key": "token", "value": "" }
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [{ "key": "token", "value": "{{token}}" }]
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/auth/login",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+						}
+					},
+					"event": [{
+						"listen": "test",
+						"script": {
+							"exec": ["var res = pm.response.json(); if(res.data && res.data.token) pm.collectionVariables.set('token', res.data.token);"]
+						}
+					}]
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/auth/register",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"test123\",\n  \"fullName\": \"Test User\",\n  \"role\": \"STUDENT\",\n  \"department\": \"Computer Science\"\n}"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Exams",
+			"item": [
+				{
+					"name": "Get All Exams",
+					"request": { "method": "GET", "url": "{{base_url}}/exams" }
+				},
+				{
+					"name": "Create Exam",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/exams",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Midterm Exam\",\n  \"description\": \"Computer Science Midterm\",\n  \"createdBy\": 2,\n  \"department\": \"Computer Science\",\n  \"durationMinutes\": 120,\n  \"startTime\": \"2025-06-15T09:00:00\",\n  \"endTime\": \"2025-06-15T11:00:00\",\n  \"maxStudents\": 50,\n  \"isProctored\": true\n}"
+						}
+					}
+				},
+				{
+					"name": "Get Exam by ID",
+					"request": { "method": "GET", "url": "{{base_url}}/exams/1" }
+				},
+				{
+					"name": "Update Exam Status",
+					"request": { "method": "PUT", "url": "{{base_url}}/exams/1/status?status=ACTIVE" }
+				}
+			]
+		},
+		{
+			"name": "Proctor",
+			"item": [
+				{
+					"name": "Log Event",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/proctor/event",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"examId\": 1,\n  \"studentId\": 3,\n  \"eventType\": \"TAB_SWITCH\",\n  \"severity\": \"MEDIUM\",\n  \"confidence\": 1.0,\n  \"description\": \"Tab switch detected\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Get Exam Logs",
+					"request": { "method": "GET", "url": "{{base_url}}/proctor/logs/1" }
+				},
+				{
+					"name": "Get Risk Score",
+					"request": { "method": "GET", "url": "{{base_url}}/proctor/risk/1/3" }
+				},
+				{
+					"name": "Get Risk Rankings",
+					"request": { "method": "GET", "url": "{{base_url}}/proctor/risk/1/rankings" }
+				},
+				{
+					"name": "Download PDF Report",
+					"request": { "method": "GET", "url": "{{base_url}}/proctor/report/1/3" }
+				},
+				{
+					"name": "Validate Blockchain",
+					"request": { "method": "GET", "url": "{{base_url}}/proctor/blockchain/validate" }
+				},
+				{
+					"name": "Sync Offline Events",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/proctor/sync",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"examId\": 1,\n    \"studentId\": 3,\n    \"eventType\": \"EYE_DEVIATION\",\n    \"severity\": \"LOW\",\n    \"confidence\": 0.7\n  }\n]"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Student",
+			"item": [
+				{
+					"name": "Join Exam",
+					"request": { "method": "POST", "url": "{{base_url}}/student/join/EX-ABC12345?studentId=3" }
+				},
+				{
+					"name": "Leave Exam",
+					"request": { "method": "POST", "url": "{{base_url}}/student/leave/1/3" }
+				},
+				{
+					"name": "Get My Risk",
+					"request": { "method": "GET", "url": "{{base_url}}/student/my-risk/1/3" }
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Dashboard Stats",
+					"request": { "method": "GET", "url": "{{base_url}}/admin/dashboard" }
+				},
+				{
+					"name": "All Users",
+					"request": { "method": "GET", "url": "{{base_url}}/admin/users" }
+				},
+				{
+					"name": "Event Analytics",
+					"request": { "method": "GET", "url": "{{base_url}}/admin/analytics/events/1" }
+				},
+				{
+					"name": "High Risk Students",
+					"request": { "method": "GET", "url": "{{base_url}}/admin/analytics/high-risk/1" }
+				},
+				{
+					"name": "Department Scores",
+					"request": { "method": "GET", "url": "{{base_url}}/admin/analytics/department-scores/1" }
+				}
+			]
+		},
+		{
+			"name": "AI Service",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": { "method": "GET", "url": "http://localhost:8000/" }
+				},
+				{
+					"name": "Calculate Risk",
+					"request": {
+						"method": "POST",
+						"url": "http://localhost:8000/api/risk/calculate",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eye_deviation\": 12,\n  \"head_pose\": 5,\n  \"multi_face\": 0,\n  \"phone_detection\": 15,\n  \"audio_whisper\": 8,\n  \"tab_switch\": 6,\n  \"sudden_movement\": 3\n}"
+						}
+					}
+				}
+			]
+		}
+	]
+}

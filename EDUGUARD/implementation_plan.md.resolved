@@ -1,0 +1,185 @@
+# EduGuardian 2.0 – Implementation Plan
+
+> AI-Powered Anti-Cheating Proctoring System (Offline + Online)
+
+## Overview
+
+Build a complete anti-cheating platform with: React frontend (client-side AI), Spring Boot backend (REST + WebSocket + JWT), Python AI microservice (ONNX/Whisper), and MySQL database. The system supports both offline and online proctoring.
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph Frontend["React Frontend (Vite)"]
+        UI[Dashboard UI] --> WS_C[WebSocket Client]
+        UI --> AI_C[Client-side AI - TensorFlow.js]
+        UI --> IDB[IndexedDB - Offline Storage]
+        AI_C --> CAM[WebRTC Camera/Mic]
+    end
+    subgraph Backend["Spring Boot Backend"]
+        API[REST Controllers] --> SVC[Services]
+        WSS[WebSocket Server] --> SVC
+        SVC --> REPO[JPA Repositories]
+        SVC --> JWT[JWT Auth]
+        SVC --> PDF[PDF Generator]
+        SVC --> BC[Blockchain Logger]
+        REPO --> DB[(MySQL)]
+    end
+    subgraph AI["Python AI Service (FastAPI)"]
+        YOLO[YOLOv8-tiny ONNX]
+        WHISP[Whisper-tiny]
+        OCV[OpenCV Motion]
+        RISK[Risk Fusion Engine]
+    end
+    Frontend -->|REST/WS| Backend
+    Backend -->|HTTP| AI
+```
+
+---
+
+## Proposed Changes
+
+### 1. Database Layer
+
+#### [NEW] [schema.sql](file:///S:/EDUGUARD/database/schema.sql)
+Full MySQL schema with 9 tables: `users`, `exams`, `proctor_logs`, `audio_events`, `visual_events`, `system_alerts`, `risk_scores`, `device_logs`, `attendance`. Includes indexes, triggers for auto-logging, and a stored procedure for risk aggregation.
+
+---
+
+### 2. Spring Boot Backend
+
+#### [MODIFY] [pom.xml](file:///S:/EDUGUARD/BACKEND/EDUGARD/pom.xml)
+Add dependencies: `jjwt` (JWT), `spring-boot-starter-websocket`, `pdfbox`, `jackson`, `validation`.
+
+#### [MODIFY] [application.properties](file:///S:/EDUGUARD/BACKEND/EDUGARD/src/main/resources/application.properties)
+Configure MySQL, JWT secret, CORS, server port.
+
+#### [NEW] Entity Models (8 files)
+`User.java`, `Exam.java`, `ProctorLog.java`, `AudioEvent.java`, `VisualEvent.java`, `SystemAlert.java`, `RiskScore.java`, `DeviceLog.java` in `com.example.EDUGARD.entity`.
+
+#### [NEW] Repositories (8 files)
+JPA repositories for all entities in `com.example.EDUGARD.repository`.
+
+#### [NEW] DTOs
+Request/response DTOs: `AuthRequest`, `AuthResponse`, `ExamDTO`, `RiskScoreDTO`, etc. in `com.example.EDUGARD.dto`.
+
+#### [NEW] Security Layer (4 files)
+- `JwtUtil.java` – token generation/validation
+- `JwtAuthFilter.java` – request filter
+- `SecurityConfig.java` – Spring Security config
+- `UserDetailsServiceImpl.java` – custom user details
+
+#### [NEW] Controllers (5 files)
+- `AuthController.java` – login/register
+- `ExamController.java` – CRUD exams
+- `ProctorController.java` – proctor logs, events
+- `StudentController.java` – student-facing endpoints
+- `AdminController.java` – analytics, reports
+
+#### [NEW] Services (6 files)
+- `AuthService.java`, `ExamService.java`, `ProctorService.java`
+- `RiskScoreService.java` – risk calculation engine
+- `PdfReportService.java` – PDF generation via PDFBox
+- `BlockchainService.java` – tamper-proof event chain
+
+#### [NEW] WebSocket (2 files)
+- `WebSocketConfig.java` – STOMP configuration
+- `ProctorWebSocketHandler.java` – real-time event push
+
+---
+
+### 3. React Frontend
+
+#### [MODIFY] [package.json](file:///S:/EDUGUARD/EDUGUARDFRONTEND/package.json)
+Add deps: `react-router-dom`, `chart.js`, `react-chartjs-2`, `@mediapipe/tasks-vision`, `@tensorflow/tfjs`, `stomp.js`.
+
+#### [NEW] Design System
+- `src/styles/variables.css` – CSS custom properties, dark/light themes
+- `src/styles/global.css` – base styles, typography, animations
+
+#### [NEW] Auth Pages
+- `src/pages/Login.jsx` + `Login.css`
+- `src/pages/Register.jsx` + `Register.css`
+
+#### [NEW] Student Exam UI
+- `src/pages/StudentExam.jsx` + `StudentExam.css`
+- Webcam preview, mic indicator, timer, risk score display, alerts
+
+#### [NEW] Invigilator Dashboard
+- `src/pages/InvigilatorDashboard.jsx` + `InvigilatorDashboard.css`
+- Live student grid with risk colors, real-time alerts, heatmap, charts
+
+#### [NEW] Admin Dashboard
+- `src/pages/AdminDashboard.jsx` + `AdminDashboard.css`
+- Analytics, trend charts, department heatmap, rule violation stats
+
+#### [NEW] AI Detection Engine (client-side)
+- `src/ai/FaceDetector.js` – face detection, count, visibility
+- `src/ai/EyeTracker.js` – gaze deviation, blink rate
+- `src/ai/HeadPoseDetector.js` – head orientation tracking
+- `src/ai/AttentionTracker.js` – combined attention scoring
+- `src/ai/RiskCalculator.js` – client-side 0-100 risk score
+
+#### [NEW] Services
+- `src/services/api.js` – REST API client with JWT
+- `src/services/websocket.js` – WebSocket/STOMP client
+- `src/services/offlineSync.js` – IndexedDB storage + sync engine
+
+#### [NEW] Browser Monitor
+- `src/services/browserMonitor.js` – tab switch, copy/paste, fullscreen detection
+
+#### [NEW] Components
+- `src/components/Navbar.jsx`, `RiskGauge.jsx`, `AlertList.jsx`, `StudentCard.jsx`, `Heatmap.jsx`, `ThemeToggle.jsx`
+
+---
+
+### 4. Python AI Microservice
+
+#### [NEW] [ai-service/](file:///S:/EDUGUARD/ai-service/)
+- `main.py` – FastAPI app with endpoints
+- `yolo_detector.py` – YOLOv8-tiny ONNX inference
+- `whisper_detector.py` – Whisper-tiny audio analysis
+- `motion_detector.py` – OpenCV movement detection
+- `risk_engine.py` – server-side risk fusion
+- `requirements.txt` – Python dependencies
+- `Dockerfile` – containerized deployment
+
+---
+
+### 5. Deployment & Documentation
+
+#### [NEW] [docker-compose.yml](file:///S:/EDUGUARD/docker-compose.yml)
+Services: mysql, backend, ai-service, frontend.
+
+#### [NEW] [.env.example](file:///S:/EDUGUARD/.env.example)
+Environment variable templates.
+
+#### [NEW] [README.md](file:///S:/EDUGUARD/README.md)
+Setup instructions for local, Docker, and cloud deployment.
+
+#### [NEW] [docs/api.md](file:///S:/EDUGUARD/docs/api.md)
+Full API documentation with endpoints, request/response schemas.
+
+#### [NEW] [docs/postman_collection.json](file:///S:/EDUGUARD/docs/postman_collection.json)
+Importable Postman collection for all endpoints.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+Since this is a greenfield project, verification focuses on:
+1. **Backend compilation**: `cd S:\EDUGUARD\BACKEND\EDUGARD && mvnw.cmd compile` – verifies all Java code compiles
+2. **Frontend build**: `cd S:\EDUGUARD\EDUGUARDFRONTEND && npm run build` – verifies React app builds without errors
+3. **SQL validation**: Load `schema.sql` into MySQL to verify syntax
+
+### Manual Verification
+1. **Start frontend dev server** (`npm run dev`) and verify in browser:
+   - Login page renders with dark/light theme toggle
+   - Student exam page shows webcam preview
+   - Invigilator dashboard renders with charts/heatmap
+   - Admin dashboard shows analytics components
+2. **Visual inspection of all pages** using the browser tool to verify premium UI quality
+
+> [!IMPORTANT]
+> This is a massive system (~60+ files). The AI models (YOLO, Whisper, MediaPipe) require their model files to be downloaded separately—the code includes download instructions and graceful fallbacks. Full end-to-end testing requires a running MySQL instance and model files.

@@ -1,0 +1,14 @@
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+numpy==1.26.4
+pydantic==2.7.0
+google-generativeai==0.8.3
+# Production AI dependencies (uncomment when models are available):
+# onnxruntime==1.17.0
+# opencv-python-headless==4.9.0.80
+# openai-whisper==20231117
+# torch==2.2.0
+# torchvision==0.17.0
+# librosa==0.10.1
+# soundfile==0.12.1
